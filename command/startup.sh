@@ -18,26 +18,25 @@ if [ -d $APP_NAME ];then
 fi
 
 # アプリ名が有効かどうか検証
-echo "$SCRIPT_DIRに移動します"
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;アプリ名が有効であるか確認します。'
 cd "$SCRIPT_DIR"
-echo "$(pwd)に移動しました。"
 ! sh is_kebab.sh          $APP_NAME && echo 'アプリ名はケバブケースにしてください。' && exit 1
 ! sh can_heroku_create.sh $APP_NAME && echo "heroku上に $APP_NAME を作成できません。" && exit 1
 ! sh can_github_create.sh $APP_NAME && echo "GitHub上に $APP_NAME を作成できません。" && exit 1
-echo 'アプリの作成が可能であることが確認できました。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;アプリの作成が可能であることが確認できました。'
 cd -
 
 # herokuにアプリケーションを作成
-echo "アプリ $APP_NAME をheroku上に作成します。"
+echo ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;アプリ $APP_NAME をheroku上に作成します。"
 cd "$SCRIPT_DIR"
 ruby -e "require './heroku_util.rb'; h = HerokuUtil.new(ARGV[0]); h.create_and_setup_as_cleardb_ignite" $APP_NAME
 cd -
-echo "アプリ $APP_NAME をheroku上に作成しました。"
+echo ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;アプリ $APP_NAME をheroku上に作成しました。"
 
 # GitHubにリポジトリを作成
-echo "リポジトリ $APP_NAME をGitHub上に作成します。"
+echo ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;リポジトリ $APP_NAME をGitHub上に作成します。"
 gh repo create $APP_NAME --private -y
-echo "リポジトリ $APP_NAME をGitHub上に作成しました。"
+echo ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;リポジトリ $APP_NAME をGitHub上に作成しました。"
 
 # origin/mainの設定 TODO
 cd $APP_NAME
@@ -67,14 +66,14 @@ chmod 744 .git/hooks/pre-push
 cd ../
 
 # Bundlerの更新
-echo 'BundlerなどのGemの更新を行います。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;BundlerなどのGemの更新を行います。'
 gem update --system
 
-echo "$APP_NAME ディレクトリ内作業を行います。"
+echo ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;$APP_NAME ディレクトリ内作業を行います。"
 cd $APP_NAME
 
 # Docker周りの設定
-echo 'Docker周りの設定を行います。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Docker周りの設定を行います。'
 cat <<EOF > entrypoint.sh
 #!/bin/bash
 set -e
@@ -138,32 +137,32 @@ services:
 EOF
 
 # Railsアプリケーションローカルディレクトリの作成
-echo 'Railsアプリケーションの置くディレクトリをsrc以下とするためディレクトリを作成します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Railsアプリケーションの置くディレクトリをsrc以下とするためディレクトリを作成します。'
 mkdir src
 
 # Railsアプリケーションの雛形作成
-echo 'Railsアプリケーションの雛形を作成します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Railsアプリケーションの雛形を作成します。'
 cd src/
 bundle init
 echo "gem 'rails'" >> Gemfile
 cd ../
 
 # Dockerクリーンアップ
-echo 'docker-compose down --rmi all --volumes --remove-orphansを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose down --rmi all --volumes --remove-orphansを実行します。'
 docker-compose down --rmi all --volumes --remove-orphans
-echo 'docker system prune --all -fを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker system prune --all -fを実行します。'
 docker system prune --all -f
 
 # new build up
-echo 'docker-compose run web bundle exec rails new . --force --database=mysqlを行います。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose run web bundle exec rails new . --force --database=mysqlを行います。'
 docker-compose run web bundle exec rails new . --force --database=mysql
-echo 'docker-compose build --no-cacheを行います。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose build --no-cacheを行います。'
 docker-compose build --no-cache # rails new より先に行う必要がある様子だったがここに置いてみた。ここではbundle installも内部で行われているのだろうか？
-echo 'docker-compose up -dを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose up -dを実行します。'
 docker-compose up -d
 
 # Railsのデータベースの設定
-echo 'Railsのデータベースの設定を行います。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Railsのデータベースの設定を行います。'
 cd src
 CONFIG_DATABASE_YML="$(pwd)/config/database.yml"
 cat <<EOF > $CONFIG_DATABASE_YML
@@ -228,18 +227,18 @@ EOF
 cd ../
 
 # Railsのデータベースを作成
-echo 'Railsのデータベースを作成します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Railsのデータベースを作成します。'
 docker-compose exec web bundle exec rails db:create
 
 # 作業ディレクトリの分離
-echo 'Rails関連ファイルとGit関連ファイルの構造を最適化します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Rails関連ファイルとGit関連ファイルの構造を最適化します。'
 rm -rf src/.git
 mv src/.gitignore .gitignore
 mv src/.gitattributes .gitattributes
 CURRENT_DOT_GITIGNORE="$(pwd)/.gitignore"
 cd "$SCRIPT_DIR"
 ruby -e "require './to_src.rb'; to_src(ARGV[0])" $CURRENT_DOT_GITIGNORE
-insert-line-to-file-last.sh "$CURRENT_DOT_GITIGNORE" "
+sh insert-line-to-file-last.sh "$CURRENT_DOT_GITIGNORE" "
 **/.DS_Store
 **/.env
 src/db/mysql_data
@@ -247,14 +246,14 @@ src/db/mysql_data
 cd -
 
 # RSpecとrexmlとconfig/application.rbの設定 TODO : config.hosts << '$APP_NAME.herokuapp.com' は必要ないか？
-echo 'RSpecとrexmlとconfig/application.rbの設定を行います。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;RSpecとrexmlとconfig/application.rbの設定を行います。'
 cd src
 CURRENT_GEMFILE="$(pwd)/Gemfile"
 CONFIG_APPLICATION_RB="$(pwd)/config/application.rb"
 cd "$SCRIPT_DIR"
-insert-line-to-file-after.sh "$CURRENT_GEMFILE" "group :development, :test do" "  gem 'rspec-rails'"
-insert-line-to-file-after.sh "$CURRENT_GEMFILE" "group :test do" "  gem 'rexml'"
-insert-line-to-file-after.sh "$CONFIG_APPLICATION_RB" "# config.eager_load_paths << Rails.root.join" "
+sh insert-line-to-file-after.sh "$CURRENT_GEMFILE" "group :development, :test do" "  gem 'rspec-rails'"
+sh insert-line-to-file-after.sh "$CURRENT_GEMFILE" "group :test do" "  gem 'rexml'"
+sh insert-line-to-file-after.sh "$CONFIG_APPLICATION_RB" "# config.eager_load_paths << Rails.root.join" "
     config.generators do |g|
       g.test_framework :rspec,
         fixtures: false,
@@ -270,11 +269,11 @@ rm -rf test/
 cd ../
 
 # Railsのライブラリを追加
-echo 'devise, pry-rails, dotenv-railsのライブラリをGemfileに追加します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;devise, pry-rails, dotenv-railsのライブラリをGemfileに追加します。'
 cd src
 CURRENT_GEMFILE="$(pwd)/Gemfile"
 cd "$SCRIPT_DIR"
-insert-line-to-file-last.sh "$CURRENT_GEMFILE" "
+sh insert-line-to-file-last.sh "$CURRENT_GEMFILE" "
 gem 'pry-rails'
 gem 'dotenv-rails'
 gem 'devise'
@@ -282,51 +281,51 @@ gem 'devise'
 cd -
 cd ../
 
-echo 'docker-compose downを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose downを実行します。'
 docker-compose down
-echo 'docker-compose build --no-cacheを行います。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose build --no-cacheを行います。'
 docker-compose build --no-cache
-echo 'docker-compose up -dを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose up -dを実行します。'
 docker-compose up -d
 
-echo 'docker-compose exec web bundle exec rails webpacker:installを行います。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose exec web bundle exec rails webpacker:installを行います。'
 docker-compose exec web bundle exec rails webpacker:install # TODO : これはどこで必要かわからない
-echo 'docker-compose exec web bundle exec rails generate rspec:installを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose exec web bundle exec rails generate rspec:installを実行します。'
 docker-compose exec web bundle exec rails generate rspec:install
-echo 'docker-compose exec web bundle exec rails generate devise:installを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose exec web bundle exec rails generate devise:installを実行します。'
 docker-compose exec web bundle exec rails generate devise:install
 
-echo 'devise:installに従いコードの追加を実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;devise:installに従いコードの追加を実行します。'
 cd src
 DEVELOPMENT_RB="$(pwd)/config/environments/development.rb"
 ROUTES_RB="$(pwd)/config/routes.rb"
 APPLICATION_HTML_ERB="$(pwd)/app/views/layouts/application.html.erb"
 cd "$SCRIPT_DIR"
-insert-line-to-file-after.sh "$DEVELOPMENT_RB" "# config.action_cable.disable_request_forgery_protection = true" "
+sh insert-line-to-file-after.sh "$DEVELOPMENT_RB" "# config.action_cable.disable_request_forgery_protection = true" "
   config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }
 "
-insert-line-to-file-before.sh "$ROUTES_RB" "end" "
+sh insert-line-to-file-before.sh "$ROUTES_RB" "end" "
   root to: 'home#index'
 "
-insert-line-to-file-before.sh "$APPLICATION_HTML_ERB" "<%= yield %>" "
+sh insert-line-to-file-before.sh "$APPLICATION_HTML_ERB" "<%= yield %>" "
     <p class="notice"><%= notice %></p>
     <p class="alert"><%= alert %></p>
 "
 cd -
 cd ../
-echo 'docker-compose exec web bundle exec rails generate devise:viewsを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose exec web bundle exec rails generate devise:viewsを実行します。'
 docker-compose exec web bundle exec rails generate devise:views
 
-echo 'docker-compose exec web bundle exec rails generate controller home indexを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose exec web bundle exec rails generate controller home indexを実行します。'
 docker-compose exec web bundle exec rails generate controller home index
-echo 'docker-compose exec web bundle exec rails generate devise Userを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose exec web bundle exec rails generate devise Userを実行します。'
 docker-compose exec web bundle exec rails generate devise User
-echo 'docker-compose exec web bundle exec rails db:migrateを実行します。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;docker-compose exec web bundle exec rails db:migrateを実行します。'
 docker-compose exec web bundle exec rails db:migrate
 
 
 # CircleCIのconfig.yml設定
-echo 'CircleCIのconfig.ymlの設定を行います。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;CircleCIのconfig.ymlの設定を行います。'
 RAILS_MASTER_KEY="$(cat src/config/master.key)"
 cd "$SCRIPT_DIR"
 ruby -e "require './heroku_util.rb'; h = HerokuUtil.new(ARGV[0]); h.config_add('RAILS_MASTER_KEY', ARGV[1])" $APP_NAME $RAILS_MASTER_KEY
@@ -426,7 +425,7 @@ workflows:
               only: main
 EOF
 
-echo '
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 1. CircleCIへプロジェクト登録を完了させてください。
 
 '
@@ -434,7 +433,7 @@ open "https://app.circleci.com/projects/project-dashboard/github/kano1101/"
 echo '設定が終えたらEnterを押してください。: (enter) '
 read Wait
 
-echo "
+echo ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 2. 次にAdd Environment Variableにて以下を設定してください。
 
   a) HEROKU_APP_NAME $APP_NAME
@@ -445,7 +444,7 @@ open "https://app.circleci.com/settings/project/github/kano1101/$APP_NAME/enviro
 echo '設定が終えたらEnterを押してください。: (enter) '
 read Wait
 
-echo '
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 3. 最後にherokuに作成したアプリのブートタイムアウトの時間を120秒に変更してください。
 
 '
@@ -454,7 +453,7 @@ echo '設定が終えたらEnterを押してください。: (enter) '
 read Wait
 
 # Railsのローカルでの画面が表示されるかどうか確認
-echo '開発環境での表示を確認してください。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;開発環境での表示を確認してください。'
 docker-compose down
 docker-compose up -d
 sleep 10
@@ -464,7 +463,7 @@ read Wait
 docker-compose down
 
 # 完了をコミット
-echo '最後にコミットをして完了とします。'
+echo ';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;最後にコミットをして完了とします。'
 git switch -c init
 git add .
 git commit -m 'Initial setup finished!'
