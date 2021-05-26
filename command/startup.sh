@@ -84,11 +84,11 @@ EOF
 chmod 744 entrypoint.sh
 cat <<EOF > start.sh
 #!/bin/sh
-if [ "${RAILS_ENV}" = "production" ]
+if [ "\${RAILS_ENV}" = "production" ]
 then
     bundle exec rails assets:precompile
 fi
-echo "PORT $PORT"
+echo "PORT \$PORT"
 bundle exec rails s -p ${PORT:-3000} -b 0.0.0.0
 EOF
 chmod 744 start.sh
