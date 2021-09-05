@@ -45,7 +45,7 @@ cat <<EOF > README.md
 # $APP_NAME
 EOF
 rm -f .git/hooks/pre-push
-git switch main
+git switch -c main
 git add .
 git commit -m 'Initial commit!'
 git push
